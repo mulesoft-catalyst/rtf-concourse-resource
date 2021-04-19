@@ -1,0 +1,229 @@
+#!/usr/bin/env bash
+
+set -e
+
+exec 3>&1 # make stdout available as fd 3 for the result
+exec 1>&2 # redirect all output to stderr for logging
+
+source=$1
+if [ -z "$source" ]; then
+  echo "usage: $0 <path/to/source>" >&2
+  exit 1
+fi
+
+echo "Concourse 'out' metadata"
+echo " - Using BUILD_ID: ${BUILD_ID}"
+echo " - Using BUILD_NAME: ${BUILD_NAME}"
+echo " - Using BUILD_JOB_NAME: ${BUILD_JOB_NAME}"
+echo " - Using BUILD_PIPELINE_NAME: ${BUILD_PIPELINE_NAME}"
+echo " - Using BUILD_PIPELINE_INSTANCE_VARS: ${BUILD_PIPELINE_INSTANCE_VARS}"
+echo " - Using BUILD_TEAM_NAME: ${BUILD_TEAM_NAME}"
+echo " - Using ATC_EXTERNAL_URL: ${ATC_EXTERNAL_URL}"
+
+printf "\n"
+
+payload=$(mktemp /tmp/rtf-concourse-resource-artifact.XXXXXX)
+
+cat > $payload <&0
+
+echo "   in - request: $(cat ${payload})"
+
+printf "\n"
+
+export URI=$(jq -r '.source.uri // ""' < $payload)
+export CLIENT_ID=$(jq -r '.source.client_id // ""' < $payload)
+export CLIENT_SECRET=$(jq -r '.source.client_secret // ""' < $payload)
+export MULE_ENV=$(jq -r '.source.mule_env // ""' < $payload)
+export ENVIRONMENT_NAME=$(jq -r '.source.environment_name // ""' < $payload)
+export GROUP_ID=$(jq -r '.source.group_id // ""' < $payload)
+export ARTIFACT_ID=$(jq -r '.source.artifact_id // ""' < $payload)
+export FABRIC_NAME=$(jq -r '.source.fabric_name // ""' < $payload)
+export MULE_RT_VERSION=$(jq -r '.source.mule_rt_version // ""' < $payload)
+
+if [ -z "${URI}" ]; then
+  echo "invalid payload (missing uri)"
+  exit 1
+fi
+
+if [ -z "${CLIENT_ID}" ]; then
+  echo "invalid payload (missing client_id)"
+  exit 1
+fi
+
+if [ -z "${CLIENT_SECRET}" ]; then
+  echo "invalid payload (missing client_secret)"
+  exit 1
+fi
+
+if [ -z "${MULE_ENV}" ]; then
+  echo "invalid payload (missing mule_env)"
+  exit 1
+fi
+
+if [ -z "${ENVIRONMENT_NAME}" ]; then
+  echo "invalid payload (missing environment_name)"
+  exit 1
+fi
+
+if [ -z "${GROUP_ID}" ]; then
+  echo "invalid payload (missing group_id)"
+  exit 1
+fi
+
+if [ -z "${ARTIFACT_ID}" ]; then
+  echo "invalid payload (missing artifact_id)"
+  exit 1
+fi
+
+if [ -z "${FABRIC_NAME}" ]; then
+  echo "invalid payload (missing fabric_name)"
+  exit 1
+fi
+
+if [ -z "${MULE_RT_VERSION}" ]; then
+  echo "invalid payload (missing mule_rt_version)"
+  exit 1
+fi
+
+export CPU_ALLOCATION_RESERVED=$(jq -r '.params.CPU_ALLOCATION_RESERVED // ""' < $payload)
+export CPU_ALLOCATION_LIMIT=$(jq -r '.params.CPU_ALLOCATION_LIMIT // ""' < $payload)
+export MEM_ALLOCATION_RESERVED=$(jq -r '.params.MEM_ALLOCATION_RESERVED // ""' < $payload)
+export MEM_ALLOCATION_LIMIT=$(jq -r '.params.MEM_ALLOCATION_LIMIT // ""' < $payload)
+export IS_CLUSTERED=$(jq -r '.params.IS_CLUSTERED // ""' < $payload)
+export HAS_ENFORCE_DEPLOYING_REPLICAS_ACROSS_NODES=$(jq -r '.params.HAS_ENFORCE_DEPLOYING_REPLICAS_ACROSS_NODES // ""' < $payload)    
+export APPLICATION_DOMAIN_NAME=$(jq -r '.params.APPLICATION_DOMAIN_NAME // ""' < $payload)
+export HAS_LAST_MILE_SECURITY=$(jq -r '.params.HAS_LAST_MILE_SECURITY // ""' < $payload)
+export HAS_FORWARD_SSL_SESSION=$(jq -r '.params.HAS_FORWARD_SSL_SESSION // ""' < $payload)
+export UPDATE_STRATEGY=$(jq -r '.params.UPDATE_STRATEGY // ""' < $payload)
+export NUM_REPLICAS=$(jq -r '.params.NUM_REPLICAS // ""' < $payload)    
+export ENV_CLIENT_ID=$(jq -r '.params.ENV_CLIENT_ID // ""' < $payload)   
+export ENV_CLIENT_SECRET=$(jq -r '.params.ENV_CLIENT_SECRET // ""' < $payload)   
+
+if [ -z "${CPU_ALLOCATION_RESERVED}" ]; then
+  echo "invalid payload (missing CPU_ALLOCATION_RESERVED)"
+  exit 1
+fi
+
+if [ -z "${CPU_ALLOCATION_LIMIT}" ]; then
+  echo "invalid payload (missing CPU_ALLOCATION_LIMIT)"
+  exit 1
+fi
+
+if [ -z "${MEM_ALLOCATION_RESERVED}" ]; then
+  echo "invalid payload (missing MEM_ALLOCATION_RESERVED)"
+  exit 1
+fi
+
+if [ -z "${MEM_ALLOCATION_LIMIT}" ]; then
+  echo "invalid payload (missing MEM_ALLOCATION_LIMIT)"
+  exit 1
+fi
+
+if [ -z "${IS_CLUSTERED}" ]; then
+  echo "invalid payload (missing IS_CLUSTERED)"
+  exit 1
+fi
+
+if [ -z "${HAS_ENFORCE_DEPLOYING_REPLICAS_ACROSS_NODES}" ]; then
+  echo "invalid payload (missing HAS_ENFORCE_DEPLOYING_REPLICAS_ACROSS_NODES)"
+  exit 1
+fi
+
+if [ -z "${HAS_LAST_MILE_SECURITY}" ]; then
+  echo "invalid payload (missing HAS_LAST_MILE_SECURITY)"
+  exit 1
+fi
+
+if [ -z "${UPDATE_STRATEGY}" ]; then
+  echo "invalid payload (missing UPDATE_STRATEGY)"
+  exit 1
+fi
+
+if [ -z "${NUM_REPLICAS}" ]; then
+  echo "invalid payload (missing NUM_REPLICAS)"
+  exit 1
+fi
+
+if [ -z "${APPLICATION_DOMAIN_NAME}" ]; then
+  echo "invalid payload (missing APPLICATION_DOMAIN_NAME)"
+  exit 1
+fi
+
+if [ -z "${ENV_CLIENT_ID}" ]; then
+  echo "invalid payload (missing ENV_CLIENT_ID)"
+  exit 1
+fi
+
+if [ -z "${ENV_CLIENT_SECRET}" ]; then
+  echo "invalid payload (missing ENV_CLIENT_SECRET)"
+  exit 1
+fi
+
+VERSION=$(cat ${source}/exchange-concourse-resource/number)
+PUBLIC_URL="${ARTIFACT_ID}.api-${MULE_ENV}.${APPLICATION_DOMAIN_NAME}"
+
+echo "Runtime Fabric Concourse Resource 'out' settings"
+echo " - Using URI: ${URI}"
+echo " - Using MULE_ENV: ${MULE_ENV}"
+echo " - Using ENVIRONMENT_NAME: ${ENVIRONMENT_NAME}"
+echo " - Using GROUP_ID: ${GROUP_ID}"
+echo " - Using ARTIFACT_ID: ${ARTIFACT_ID}"
+echo " - Using VERSION: ${VERSION}"
+echo " - Using FABRIC_NAME: ${FABRIC_NAME}"
+echo " - Using MULE_RT_VERSION: ${MULE_RT_VERSION}"
+echo " - Using CPU_ALLOCATION_RESERVED: ${CPU_ALLOCATION_RESERVED}"
+echo " - Using CPU_ALLOCATION_LIMIT: ${CPU_ALLOCATION_LIMIT}"
+echo " - Using MEM_ALLOCATION_RESERVED: ${MEM_ALLOCATION_RESERVED}"
+echo " - Using MEM_ALLOCATION_LIMIT: ${MEM_ALLOCATION_LIMIT}"
+echo " - Using IS_CLUSTERED: ${IS_CLUSTERED}"
+echo " - Using HAS_ENFORCE_DEPLOYING_REPLICAS_ACROSS_NODES: ${HAS_ENFORCE_DEPLOYING_REPLICAS_ACROSS_NODES}"
+echo " - Using APPLICATION_DOMAIN_NAME: ${APPLICATION_DOMAIN_NAME}"
+echo " - Using HAS_LAST_MILE_SECURITY: ${HAS_LAST_MILE_SECURITY}"
+echo " - Using HAS_FORWARD_SSL_SESSION: ${HAS_FORWARD_SSL_SESSION}"
+echo " - Using UPDATE_STRATEGY: ${UPDATE_STRATEGY}"
+echo " - Using NUM_REPLICAS: ${NUM_REPLICAS}"
+echo " - Using ENV_CLIENT_ID: ${ENV_CLIENT_ID}"
+echo " - Using ENV_CLIENT_SECRET: ${ENV_CLIENT_SECRET}"
+
+printf "\n"
+
+source $(dirname $0)/api.sh
+
+get_token_for_connected_app "${CLIENT_ID}" "${CLIENT_SECRET}" "${URI}"
+
+printf "\n"
+
+deploy_application_asset_to_rtf \
+  "${URI}" \
+  "${MULE_ENV}" \
+  "${ENVIRONMENT_NAME}" \
+  "${GROUP_ID}" \
+  "${ARTIFACT_ID}" \
+  "${VERSION}" \
+  "${FABRIC_NAME}" \
+  "${MULE_RT_VERSION}" \
+  "${CPU_ALLOCATION_RESERVED}" \
+  "${CPU_ALLOCATION_LIMIT}" \
+  "${MEM_ALLOCATION_RESERVED}" \
+  "${MEM_ALLOCATION_LIMIT}" \
+  "${IS_CLUSTERED}" \
+  "${HAS_ENFORCE_DEPLOYING_REPLICAS_ACROSS_NODES}" \
+  "${PUBLIC_URL}" \
+  "${HAS_LAST_MILE_SECURITY}" \
+  "${HAS_FORWARD_SSL_SESSION}" \
+  "${UPDATE_STRATEGY}" \
+  "${NUM_REPLICAS}" \
+  "${ENV_CLIENT_ID}" \
+  "${ENV_CLIENT_SECRET}"
+
+out="{ \
+  \"version\": { \"ref\": \"${VERSION}\" }, \
+  \"metadata\": [ \
+    { \"name\": \"group_id\", \"value\": \"${GROUP_ID}\"}, \
+    { \"name\": \"artifact_id\", \"value\": \"${ARTIFACT_ID}\" } \
+  ] \
+}"
+
+echo "  out - response: ${out}"
+
+printf "${out}" >&3
