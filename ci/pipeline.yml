@@ -1,5 +1,5 @@
 resources:
-- name: rtf-councourse-resource
+- name: rtf-concourse-resource
   type: git
   icon: github
   source:
@@ -30,13 +30,13 @@ resources:
 jobs:
 - name: build-and-publish-image
   plan:
-  - get: rtf-councourse-resource
+  - get: rtf-concourse-resource
     trigger: true
   - get: version-resource
     params: { pre: rc }
   - put: docker-image-resource
     params:
-      build: rtf-councourse-resource
+      build: rtf-concourse-resource
       build_args:
         MAINTAINER: jdoe@example.org
         BUILD: concourse-$BUILD_ID
